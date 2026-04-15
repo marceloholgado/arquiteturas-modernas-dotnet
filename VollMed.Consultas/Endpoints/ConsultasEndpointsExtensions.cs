@@ -33,5 +33,18 @@ namespace VollMed.Consultas.Endpoints
 
             return app;
         }
+
+        public static WebApplication MapReceitasEndpoints(this WebApplication app)
+        {
+            var group = app.MapGroup("/api/receitas")
+                .WithTags("Receitas");
+
+            group.MapPost("", PostReceita.Handle)
+                .WithName("CriarReceita")
+                .Produces<PostReceita.PostReceitaResponse>(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status404NotFound)
+                .Produces (StatusCodes.Status400BadRequest);
+            return app;
+        }
     }
 }

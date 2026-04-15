@@ -3,8 +3,15 @@ using VollMed.Consultas.Data;
 using VollMed.Consultas.Data.Repositories;
 using VollMed.Consultas.Domain.Interfaces;
 using VollMed.Consultas.Endpoints;
+using Refit;
+using VollMed.Consultas.Services;
+using MassTransit;
+using VollMed.Consultas.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<AuthHandler>();
 
 // Add DbContext
 builder.Services.AddDbContext<VollMedDbContext>(options =>
@@ -16,6 +23,34 @@ builder.Services.AddTransient<IConsultaRepository, ConsultaRepository>();
 // Add OpenAPI/Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+string apiUris = builder.Configuration["Api:Uri"] 
+    ?? throw new Exception("Uri da API VollMed não configurada");
+
+builder.Services
+    .AddRefitClient<IMedicosAPI>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiUris))
+    .AddHttpMessageHandler<AuthHandler>();
+
+builder.Services
+    .AddRefitClient<IPacientesApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiUris))
+    .AddHttpMessageHandler<AuthHandler>();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((ctx, cfg) =>
+    {
+        var rabbitMqConfig = builder.Configuration.GetSection("RabbitMQ");
+
+        cfg.Host(rabbitMqConfig["Host"], Convert.ToUInt16(rabbitMqConfig["Port"]), "/",
+        h =>
+        {
+            h.Username(rabbitMqConfig["Username"]!);
+            h.Password(rabbitMqConfig["Password"]!);
+        });
+    });
+});
 
 var app = builder.Build();
 
@@ -37,6 +72,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Map Consultas endpoints
-app.MapConsultasEndpoints();
+app
+    .MapConsultasEndpoints()
+    .MapReceitasEndpoints();
 
 app.Run();
