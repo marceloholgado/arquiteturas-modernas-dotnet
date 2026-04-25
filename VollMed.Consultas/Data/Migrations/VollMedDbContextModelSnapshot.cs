@@ -48,7 +48,6 @@ namespace VollMed.Consultas.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Receita")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

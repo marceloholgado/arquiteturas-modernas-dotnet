@@ -10,6 +10,8 @@ using VollMed.Consultas.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<AuthHandler>();
 
@@ -25,7 +27,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 string apiUris = builder.Configuration["Api:Uri"] 
-    ?? throw new Exception("Uri da API VollMed n„o configurada");
+    ?? throw new Exception("Uri da API VollMed n√£o configurada");
 
 builder.Services
     .AddRefitClient<IMedicosAPI>()
@@ -53,6 +55,8 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Configure Swagger in Development
 if (app.Environment.IsDevelopment())
